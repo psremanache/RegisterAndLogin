@@ -1,0 +1,22 @@
+﻿@model UserAndRegistration.Models.UserLogin
+
+@{
+    ViewBag.Title = "AfterLogin";
+    if(Session["LoggedUserID"] == null)
+    {
+        Response.Redirect("~/User/Login/");
+    }
+}
+
+<h2>Login is Successful</h2>
+<text>
+        Welcome @Session["LoggedUserID"].ToString()
+</text>
+
+
+<div>
+    <br />
+</div>
+<input type="button" value="Logout" onclick="location.href='@Url.Action("Logout")'" />
+  
+ 
