@@ -1,4 +1,4 @@
-﻿// T4 code generation is enabled for model 'G:\csharp_project\web_project\UserAndRegistration\UserAndRegistration\Models\MyModel.edmx'. 
+﻿// T4 code generation is enabled for model 'G:\GitProject\psr\RegisterAndLogin\UserAndRegistration\UserAndRegistration\Models\MyModel.edmx'. 
 // To enable legacy code generation, change the value of the 'Code Generation Strategy' designer
 // property to 'Legacy ObjectContext'. This property is available in the Properties Window when the model
 // is open in the designer.

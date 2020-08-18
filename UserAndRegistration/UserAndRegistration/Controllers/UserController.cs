@@ -126,7 +126,7 @@ namespace UserAndRegistration.Controllers
                               
                         ViewBag.Message = "Account is Successfully Activated";
                         v.EmailVerified = true;
-                        v.ConfirmPassword = v.Password;//table does not have confirm passwoed
+                        lde.Configuration.ValidateOnSaveEnabled = false; //v.ConfirmPassword = v.Password;//table does not have confirm password
                         lde.SaveChanges();
                         return View("AfterRegistration");
                 }
@@ -143,7 +143,7 @@ namespace UserAndRegistration.Controllers
                 return v == null ? false : true;
             }
         }
-        public bool sendVerificationLink(string toEmail,string activationCode)
+        public bool sendVerificationLink(string toEmail,string activationCode,string forEmail="ActivateAccount")
         {
             try
             {
@@ -156,11 +156,21 @@ namespace UserAndRegistration.Controllers
                 client.DeliveryMethod = SmtpDeliveryMethod.Network;
                 client.UseDefaultCredentials = false;
                 client.Credentials = new NetworkCredential(senderEmail, senderPassword);
-                //var verifyUrl = "https:/localhost:44344/User/ActivateAccount/" + activationCode;
-               // var verifyUrl = Url.Action("ActivateAccount","User",new {id = activationCode });
-                var verifyUrl= this.Url.Action("ActivateAccount", "User", new { id = activationCode }, this.Request.Url.Scheme);
-                string subject = "Registration link for verification";
-                string emailBody = "<div>We are excited to tell you that your account is successfully created!!<br />Please click below link for verify your account.<br /><a href='"+verifyUrl+"'>Activation Link</a></div>";
+                string subject = "";
+                string emailBody = "";
+                if (forEmail == "ActivateAccount")
+                {
+                    var verifyUrl = this.Url.Action("ActivateAccount", "User", new { id = activationCode }, this.Request.Url.Scheme);
+                    subject = "Registration link for verification";
+                    emailBody = "<div>We are excited to tell you that your account is successfully created!!<br />Please click below link for verify your account.<br /><a href='" + verifyUrl + "'>Activation Link</a></div>";
+                }
+                else if(forEmail=="ResetPassword")
+                {
+                    var verifyUrl = this.Url.Action(forEmail, "User", new { id = activationCode }, this.Request.Url.Scheme);
+                    subject = "Forgot Password Link";
+                    emailBody = "<div>Click on below link for setting new password for your account!!<br /><a href='" + verifyUrl + "'>Activation Link</a></div>";
+                
+                }
                 MailMessage mailMessage = new MailMessage(senderEmail, toEmail, subject, emailBody);
                 mailMessage.IsBodyHtml = true;
                 mailMessage.BodyEncoding = UTF8Encoding.UTF8;
@@ -171,8 +181,80 @@ namespace UserAndRegistration.Controllers
             {
                 ViewBag.Message = ex.Message;
                 return false;
+            }         
+        }
+        
+        [HttpGet]
+        public ActionResult ForgotPassword()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        public ActionResult ForgotPassword(string emailID)
+        {
+            //Check emailID matches the database model
+            using(LoginDatabaseEntities2 lde = new LoginDatabaseEntities2())
+            {
+                var v = lde.Users.Where(a => a.EmailID == emailID).FirstOrDefault();
+                if (v != null)
+                {
+                    //Generate forgot password code
+                    string resetCode = Guid.NewGuid().ToString();
+                    sendVerificationLink(emailID, resetCode, "ResetPassword");
+                    v.ResetPasswordCode = resetCode;
+                    lde.Configuration.ValidateOnSaveEnabled = false;
+                    lde.SaveChanges();
+                    ViewBag.Message = "Verification link is sent to your email ID";
+                }
+                else
+                {
+                    ViewBag.Message = "No account with this email ID";                 
+                }
             }
-            
+            return View();
+        }
+        public ActionResult ResetPassword(string id)
+        {
+            using(LoginDatabaseEntities2 lde = new LoginDatabaseEntities2())
+            {
+                var user = lde.Users.Where(a => a.ResetPasswordCode == id).FirstOrDefault();
+                if(user!=null)
+                {
+                    ResetPasswordModel model = new ResetPasswordModel();
+                    model.resetCode = id;
+                    return View(model);
+                }
+                else
+                {
+                    return HttpNotFound();
+                }
+                
+            }         
+        }
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult ResetPassword(ResetPasswordModel model)
+        {
+            string message = "";
+            using(LoginDatabaseEntities2 lde = new LoginDatabaseEntities2())
+            {
+                var user = lde.Users.Where(a => a.ResetPasswordCode == model.resetCode).FirstOrDefault();
+                if(user!=null)
+                {
+                    user.Password = model.newPassword;
+                    user.ResetPasswordCode = "";//this is done so that link can be used only once
+                    lde.Configuration.ValidateOnSaveEnabled = false;
+                    lde.SaveChanges();
+                    message = "Password is successfully changed";
+                }
+                else
+                {
+                    message = "Error occured";
+                }
+            }
+            ViewBag.Message = message;
+            return View(model);
         }
     }
 }

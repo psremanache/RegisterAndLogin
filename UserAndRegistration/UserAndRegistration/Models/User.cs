@@ -23,5 +23,6 @@ namespace UserAndRegistration.Models
         public string Password { get; set; }
         public Nullable<bool> EmailVerified { get; set; }
         public Nullable<System.Guid> ActivationCode { get; set; }
+        public string ResetPasswordCode { get; set; }
     }
 }
