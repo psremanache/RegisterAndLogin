@@ -116,6 +116,9 @@ namespace UserAndRegistration.Controllers
             FormsAuthentication.SignOut();
             return RedirectToAction("Login","User");
         }
+
+        //checks the activation code matches the data base activation code and save 
+        //changes in database
         public ActionResult ActivateAccount(string id)
         {
             using(LoginDatabaseEntities2 lde = new LoginDatabaseEntities2())
@@ -143,6 +146,8 @@ namespace UserAndRegistration.Controllers
                 return v == null ? false : true;
             }
         }
+
+        //sends verification link for registration or forget password
         public bool sendVerificationLink(string toEmail,string activationCode,string forEmail="ActivateAccount")
         {
             try
@@ -185,24 +190,26 @@ namespace UserAndRegistration.Controllers
         }
         
         [HttpGet]
+        //Opens page for asking email ID for sending verification link
         public ActionResult ForgotPassword()
         {
             return View();
         }
 
         [HttpPost]
+        //recieves email ID and checks it matches with data base
+        //Generate forget password code
         public ActionResult ForgotPassword(string emailID)
         {
-            //Check emailID matches the database model
+            
             using(LoginDatabaseEntities2 lde = new LoginDatabaseEntities2())
             {
-                var v = lde.Users.Where(a => a.EmailID == emailID).FirstOrDefault();
-                if (v != null)
-                {
-                    //Generate forgot password code
+                var user = lde.Users.Where(a => a.EmailID == emailID).FirstOrDefault();
+                if (user != null)
+                {             
                     string resetCode = Guid.NewGuid().ToString();
                     sendVerificationLink(emailID, resetCode, "ResetPassword");
-                    v.ResetPasswordCode = resetCode;
+                    user.ResetPasswordCode = resetCode;
                     lde.Configuration.ValidateOnSaveEnabled = false;
                     lde.SaveChanges();
                     ViewBag.Message = "Verification link is sent to your email ID";
@@ -214,6 +221,9 @@ namespace UserAndRegistration.Controllers
             }
             return View();
         }
+
+        //recieves verification code and checks it matches with database verf code
+        //& it opens a page for password change
         public ActionResult ResetPassword(string id)
         {
             using(LoginDatabaseEntities2 lde = new LoginDatabaseEntities2())
@@ -234,6 +244,7 @@ namespace UserAndRegistration.Controllers
         }
         [HttpPost]
         [ValidateAntiForgeryToken]
+        //here actual password is saved in database
         public ActionResult ResetPassword(ResetPasswordModel model)
         {
             string message = "";
