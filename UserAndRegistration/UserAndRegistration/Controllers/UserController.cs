@@ -208,11 +208,14 @@ namespace UserAndRegistration.Controllers
                 if (user != null)
                 {             
                     string resetCode = Guid.NewGuid().ToString();
-                    sendVerificationLink(emailID, resetCode, "ResetPassword");
+                    bool status=sendVerificationLink(emailID, resetCode, "ResetPassword");
                     user.ResetPasswordCode = resetCode;
                     lde.Configuration.ValidateOnSaveEnabled = false;
                     lde.SaveChanges();
-                    ViewBag.Message = "Verification link is sent to your email ID";
+                    if(status==true)
+                        ViewBag.Message = "Verification link is sent to your email ID";
+                    else
+                        ViewBag.Message = "Failed to send Verification link to your email ID";
                 }
                 else
                 {
